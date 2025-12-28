@@ -67,6 +67,21 @@
   </div>
 </section>
 
+{# ---------- PRO CTA ---------- #}
+{% if not is_pro %}
+  <section class="pro-cta">
+    <div class="pro-cta-left">
+      <div class="pro-cta-title">Unlock step-by-step fixes</div>
+      <div class="pro-cta-text muted">
+        Get detailed instructions and examples for each issue — tailored to your report.
+      </div>
+    </div>
+    <div class="pro-cta-right">
+      <a class="btn btn-primary" href="/pricing">Upgrade to Pro</a>
+    </div>
+  </section>
+{% endif %}
+
 {# ---------- SUMMARY ---------- #}
 <section class="summary-cards">
   <div class="card">
@@ -109,7 +124,7 @@
       </div>
 
       <p class="muted" style="margin-top:12px;">
-        Tip: start with <strong>Important</strong> items, then apply <strong>Best practice</strong> improvements.
+        Tip: start with <strong>Critical</strong> and <strong>Important</strong>, then apply <strong>Best practice</strong>.
       </p>
     </div>
   </div>

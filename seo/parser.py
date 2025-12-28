@@ -19,6 +19,7 @@ def extract_head_data(soup: BeautifulSoup) -> dict:
     canonicals = []
     html_lang = ""
     jsonld_blocks = []
+    favicon = ""
 
     if soup and soup.html and soup.html.has_attr("lang"):
         html_lang = (soup.html.get("lang") or "").strip()
@@ -43,6 +44,11 @@ def extract_head_data(soup: BeautifulSoup) -> dict:
             if "canonical" in rel and href:
                 canonicals.append(href)
 
+            # favicon discovery (basic)
+            if not favicon and href:
+                if ("icon" in rel) or ("shortcut icon" in rel) or ("apple-touch-icon" in rel):
+                    favicon = href
+
         for script in head.find_all("script"):
             t = (script.get("type") or "").strip().lower()
             if t == "application/ld+json":
@@ -57,13 +63,14 @@ def extract_head_data(soup: BeautifulSoup) -> dict:
         "viewport": viewport,
         "og": og,
         "canonicals": canonicals,
+        "canonical": canonicals[0] if canonicals else "",
         "html_lang": html_lang,
-        "jsonld_blocks": jsonld_blocks
+        "jsonld_blocks": jsonld_blocks,
+        "favicon": favicon
     }
 
 def extract_body_signals(soup: BeautifulSoup) -> dict:
     h1_count = 0
-    internal_links = []
     all_links = []
     images = []
     text = ""

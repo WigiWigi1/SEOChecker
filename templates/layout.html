@@ -6,9 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}SEOChecker{% endblock %}</title>
 
-  {# If you already have global CSS - keep it. Just ensure app.css is loaded AFTER it #}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -31,8 +29,12 @@
 
   <footer class="footer">
     <div class="container footer-inner">
-      <div class="muted">© {{ (now().year if now is defined else "") }} SEOChecker</div>
-      <div class="muted">Actionable SEO audits</div>
+      <div class="muted">
+        © {{ (now().year if now is defined else "") }} SEOChecker
+      </div>
+      <div class="muted">
+        Actionable SEO audits
+      </div>
     </div>
   </footer>
 

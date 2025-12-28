@@ -14,6 +14,7 @@ class PageData:
     status_code: int
     headers: dict
     redirect_chain: list
+    depth: int = 0
     html: str = ""
     head: dict = field(default_factory=dict)
     body: dict = field(default_factory=dict)
@@ -50,9 +51,6 @@ class MiniCrawler:
         return b[: self.max_bytes].decode("utf-8", errors="ignore")
 
     def _fetch(self, url: str) -> Tuple[Optional[requests.Response], list, str, Optional[str]]:
-        """
-        Returns: (response, redirect_chain, body_text, error_message)
-        """
         headers = {
             "User-Agent": self.user_agent,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
@@ -62,16 +60,12 @@ class MiniCrawler:
             r = requests.get(url, headers=headers, timeout=self.timeout_s, allow_redirects=True)
             for h in r.history:
                 chain.append({"url": h.url, "status": h.status_code})
-
             body = self._trim_bytes(r.text or "")
             return r, chain, body, None
         except Exception as e:
             return None, [], "", f"{type(e).__name__}: {e}"
 
     def _fetch_text(self, url: str) -> Tuple[Optional[str], Optional[int], Optional[str]]:
-        """
-        Returns: (text, status_code, error_message)
-        """
         headers = {"User-Agent": self.user_agent, "Accept": "*/*"}
         try:
             r = requests.get(url, headers=headers, timeout=self.timeout_s, allow_redirects=True)
@@ -108,7 +102,6 @@ class MiniCrawler:
                 if ("<urlset" in low) or ("<sitemapindex" in low):
                     return sm_url, txt, st
 
-        # fallback: return last tried sitemap.xml even if it doesn't look perfect
         fallback = normalize_url(f"{base}/sitemap.xml")
         txt, st, _err = self._fetch_text(fallback)
         return fallback, txt, st
@@ -122,7 +115,6 @@ class MiniCrawler:
         queue: List[Tuple[str, int]] = [(start, 0)]
         errors: List[str] = []
 
-        # robots + sitemap
         robots_url = f"{urlparse(start).scheme}://{host}/robots.txt"
         robots_txt, robots_status, robots_err = self._fetch_text(robots_url)
         if robots_err:
@@ -140,7 +132,6 @@ class MiniCrawler:
             if not is_http_url(url):
                 continue
 
-            # allow only same host (after first page we lock to discovered host)
             if urlparse(url).netloc.lower() != host and len(pages) > 0:
                 continue
 
@@ -150,7 +141,6 @@ class MiniCrawler:
                 continue
             assert resp is not None
 
-            # accept host change on very first fetched page (www/non-www redirect)
             final_host = urlparse(resp.url).netloc.lower()
             if len(pages) == 0 and final_host != host:
                 host = final_host
@@ -164,6 +154,7 @@ class MiniCrawler:
                 status_code=resp.status_code,
                 headers={k.lower(): v for k, v in resp.headers.items()},
                 redirect_chain=chain,
+                depth=depth,
                 html=html
             )
 
@@ -173,12 +164,20 @@ class MiniCrawler:
                 page.body = extract_body_signals(soup)
                 page.jsonld = parse_jsonld_blocks(page.head.get("jsonld_blocks", []))
 
+                # build internal links list (absolute + same-host)
+                internal_links = []
+                for href in page.body.get("all_links", []):
+                    absu = absolutize(page.final_url, href)
+                    if not absu:
+                        continue
+                    if same_host(absu, page.final_url):
+                        internal_links.append(normalize_url(absu))
+                page.body["internal_links"] = internal_links
+                page.body["internal_links_count"] = len(internal_links)
+
                 if depth < max_depth:
-                    for href in page.body.get("all_links", []):
-                        absu = absolutize(page.final_url, href)
-                        if not absu:
-                            continue
-                        if same_host(absu, page.final_url) and absu not in visited:
+                    for absu in internal_links:
+                        if absu not in visited:
                             queue.append((absu, depth + 1))
 
             pages[url] = page

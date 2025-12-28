@@ -287,6 +287,9 @@ def api_pro_fix(report_id: str, check_id: str):
 
     return jsonify({"ok": True, "check_id": check_id, "content_md": md})
 
+@app.get("/pricing")
+def pricing():
+    return render_template("pricing.html")
 
 # DEV ONLY: ручное включение Pro на 7 дней (чтобы тестить UI)
 # УДАЛИМ/ЗАКРОЕМ когда подключишь Stripe
@@ -338,6 +341,18 @@ def dev_toggle_pro():
         conn.close()
 
     return redirect(url_for("index"))
+
+@app.get("/waitlist")
+def waitlist():
+    plan = request.args.get("plan", "pro")
+    return render_template("waitlist.html", plan=plan)
+
+@app.post("/waitlist")
+def waitlist_post():
+    email = (request.form.get("email") or "").strip().lower()
+    plan = request.form.get("plan") or "pro"
+    # TODO: сохранить email куда-то (sqlite table waitlist / или просто лог)
+    return render_template("waitlist_done.html", email=email, plan=plan)
 
 
 if __name__ == "__main__":

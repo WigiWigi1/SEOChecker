@@ -12,7 +12,14 @@
     return Array.from((root || document).querySelectorAll(sel));
   }
 
+  // CSS.escape fallback (старые браузеры)
+  function cssEscapeSafe(value) {
+    if (window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(value);
+    return String(value).replace(/["\\]/g, "\\$&");
+  }
+
   ready(() => {
+    // Filters
     const toggleNa = document.getElementById("toggle-na");
     const togglePass = document.getElementById("toggle-pass");
 
@@ -49,10 +56,11 @@
     });
 
     // Pro steps loader
-    const cache = new Map(); // checkId -> content
+    const cache = new Map(); // checkId -> content_md
 
     async function loadProSteps(checkId) {
       if (!reportId) throw new Error("Missing reportId");
+
       const url = `/api/report/${encodeURIComponent(reportId)}/pro/${encodeURIComponent(checkId)}`;
       const r = await fetch(url, { credentials: "include" });
 
@@ -66,16 +74,23 @@
     }
 
     function renderMdPlain(md) {
-      // простая безопасная отрисовка: как текст
-      // позже можно заменить на серверный markdown->html
+      // безопасно: как текст (без HTML)
       const pre = document.createElement("pre");
       pre.className = "pro-md";
       pre.textContent = md || "";
       return pre;
     }
 
+    function setContainerMessage(container, msg) {
+      container.innerHTML = "";
+      const div = document.createElement("div");
+      div.className = "pro-md";
+      div.textContent = msg;
+      container.appendChild(div);
+    }
+
     async function onOpenPro(checkId, btn) {
-      const container = qs(`.pro-content[data-check-id="${CSS.escape(checkId)}"]`);
+      const container = qs(`.pro-content[data-check-id="${cssEscapeSafe(checkId)}"]`);
       if (!container) return;
 
       const isVisible = container.style.display !== "none";
@@ -85,7 +100,14 @@
         return;
       }
 
+      // If UI shows the pro button but server says user isn't pro
+      if (!isPro) {
+        window.location.href = "/pricing";
+        return;
+      }
+
       btn.disabled = true;
+      const prevText = btn.textContent;
       btn.textContent = "Loading…";
 
       try {
@@ -99,23 +121,28 @@
 
         const data = await loadProSteps(checkId);
         if (!data || data.ok === false) {
-          container.innerHTML = "";
-          container.textContent = "Pro required or steps not found.";
           container.style.display = "block";
-          btn.textContent = "Show steps";
+          if (data && data.reason === "PRO_REQUIRED") {
+            setContainerMessage(container, "Pro required to view step-by-step fixes.");
+            btn.textContent = "Show steps";
+          } else {
+            setContainerMessage(container, "Steps not found for this check yet.");
+            btn.textContent = "Show steps";
+          }
           return;
         }
 
-        cache.set(checkId, data.content_md || "");
+        const md = data.content_md || "";
+        cache.set(checkId, md);
+
         container.innerHTML = "";
-        container.appendChild(renderMdPlain(data.content_md || ""));
+        container.appendChild(renderMdPlain(md));
         container.style.display = "block";
         btn.textContent = "Hide steps";
       } catch (e) {
-        container.innerHTML = "";
-        container.textContent = "Failed to load steps.";
         container.style.display = "block";
-        btn.textContent = "Show steps";
+        setContainerMessage(container, "Failed to load steps. Please try again.");
+        btn.textContent = prevText || "Show steps";
       } finally {
         btn.disabled = false;
       }
@@ -126,13 +153,6 @@
       btn.addEventListener("click", () => {
         const checkId = btn.getAttribute("data-check-id");
         if (!checkId) return;
-
-        // если вдруг сервер сказал is_pro, но кнопки отображаются ошибочно:
-        if (!isPro) {
-          window.location.href = "/pricing";
-          return;
-        }
-
         onOpenPro(checkId, btn);
       });
     });

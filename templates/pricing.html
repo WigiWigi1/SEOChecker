@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+{% block title %}SEOChecker — Pricing{% endblock %}
+{% block page_class %}page-pricing{% endblock %}
+
+{% block content %}
+<section class="pricing">
+  <div class="pricing-head">
+    <h1>Simple pricing</h1>
+    <p class="subtitle">Run a free audit. Upgrade only if you want step-by-step fixes.</p>
+  </div>
+
+  <div class="pricing-grid">
+
+    <!-- Free -->
+    <div class="pricing-card">
+      <h2>Free</h2>
+      <div class="price">$0</div>
+      <p class="muted">For quick checks and a clean overview.</p>
+
+      <ul class="features">
+        <li>1 site / day</li>
+        <li>Up to 10 pages</li>
+        <li>SEO score + highlights</li>
+        <li class="muted">No step-by-step fixes</li>
+      </ul>
+
+      <a href="/" class="btn btn-secondary">Run free audit</a>
+    </div>
+
+    <!-- Pro -->
+    <div class="pricing-card featured">
+      <div class="badge">Most popular</div>
+      <h2>Pro</h2>
+      <div class="price">$9 <span>/ month</span></div>
+      <p class="muted">For founders & devs who want a clear “do this next” plan.</p>
+
+      <ul class="features">
+        <li><b>Step-by-step fix instructions</b></li>
+        <li><b>Priority order (Critical → Best practice)</b></li>
+        <li>Up to 20 sites / month</li>
+        <li>Up to 100 pages / site</li>
+        <li>Export & share report</li>
+      </ul>
+
+      <a href="/waitlist?plan=pro" class="btn btn-primary">Get Pro</a>
+      <p class="small muted" style="margin-top:10px;">
+        Early access: we’ll enable Pro for you after signup.
+      </p>
+    </div>
+
+    <!-- Lifetime -->
+    <div class="pricing-card">
+      <h2>Lifetime</h2>
+      <div class="price">$29 <span>one-time</span></div>
+      <p class="muted">For early adopters. Pay once, keep access.</p>
+
+      <ul class="features">
+        <li>All Pro features</li>
+        <li>50 audits total</li>
+        <li>No subscription</li>
+        <li class="muted">Limited support</li>
+      </ul>
+
+      <a href="/waitlist?plan=lifetime" class="btn btn-secondary">Get Lifetime</a>
+    </div>
+
+  </div>
+
+  <div class="pricing-faq">
+    <h3>What counts as an audit?</h3>
+    <p class="muted">One audit = crawl + checks + report for a single website.</p>
+
+    <h3>Can I cancel anytime?</h3>
+    <p class="muted">Yes. (When payments are enabled — you’ll manage it from your billing portal.)</p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block title %}SEOChecker — Requested{% endblock %}
+
+{% block content %}
+<section class="card" style="max-width:720px;margin:18px auto;padding:18px;">
+  <h1 style="margin-top:0;">Request received ✅</h1>
+  {% if email %}
+    <p>We’ll email <b>{{ email }}</b> when {{ plan|title }} is activated.</p>
+  {% else %}
+    <p>We’ll get back to you soon.</p>
+  {% endif %}
+
+  <a class="btn btn-secondary" href="/">Run another audit</a>
+</section>
+{% endblock %}

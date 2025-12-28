@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block title %}SEOChecker — Early access{% endblock %}
+
+{% block content %}
+<section class="card" style="max-width:720px;margin:18px auto;padding:18px;">
+  <h1 style="margin-top:0;">Get {{ plan|title }} early access</h1>
+  <p class="muted">
+    Payments are being enabled. Leave your email and we’ll activate your plan.
+  </p>
+
+  <form method="post" action="/waitlist" style="margin-top:14px;">
+    <input type="hidden" name="plan" value="{{ plan }}">
+    <label>Email</label>
+    <input name="email" type="email" placeholder="you@company.com" required style="width:100%;margin:8px 0 12px;">
+    <button class="btn btn-primary" type="submit">Request access</button>
+  </form>
+
+  <p class="small muted" style="margin-top:12px;">
+    Tip: If you already have a report open, send us the report link and we’ll enable Pro instantly.
+  </p>
+</section>
+{% endblock %}
