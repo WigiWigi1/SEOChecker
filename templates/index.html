@@ -1,0 +1,55 @@
+<!doctype html>
+
+{% extends "layout.html" %}
+{% block title %}SEOChecker — Audit{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>SEO audit that tells you what to fix</h1>
+  <p>Not just scores. Clear priorities and step-by-step fixes.</p>
+
+  <form method="post" action="/audit" class="audit-form">
+    <input type="text" name="url" placeholder="https://example.com" required>
+    <button type="submit">Run SEO Audit</button>
+  </form>
+</section>
+{% endblock %}
+
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>SeoChecker (MVP 0.1)</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <h1>SeoChecker (MVP 0.1)</h1>
+    <form method="post" action="/audit" class="card">
+      <label>URL</label>
+      <input name="url" placeholder="https://colorqr.app" required>
+
+      <div class="row">
+        <div>
+          <label>Plan</label>
+          <select name="plan">
+            <option value="free">free</option>
+            <option value="pro">pro</option>
+            <option value="premium">premium</option>
+          </select>
+        </div>
+        <div>
+          <label>Max pages</label>
+          <input name="max_pages" type="number" value="10" min="1" max="500">
+        </div>
+        <div>
+          <label>Max depth</label>
+          <input name="max_depth" type="number" value="2" min="0" max="5">
+        </div>
+      </div>
+
+      <button type="submit">Run audit</button>
+      <p class="hint">MVP: HTML-based crawl. No JS rendering. Good enough to catch 80% of real blockers.</p>
+    </form>
+  </div>
+</body>
+</html>

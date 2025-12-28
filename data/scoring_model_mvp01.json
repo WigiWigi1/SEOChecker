@@ -1,0 +1,89 @@
+{
+  "schema_version": "mvp-0.1",
+  "scoring": {
+    "category_weights": {
+      "indexing_crawlability": 0.28,
+      "canonical_duplicates": 0.12,
+      "status_redirects": 0.10,
+      "sitemaps_robots": 0.10,
+      "mobile_rendering": 0.10,
+      "performance_cwv": 0.15,
+      "onpage_basic": 0.08,
+      "site_architecture": 0.03,
+      "structured_data": 0.02,
+      "internationalization": 0.01,
+      "trust_transparency": 0.01
+    },
+    "severity_weights": {
+      "critical": 1.0,
+      "high": 0.7,
+      "medium": 0.4,
+      "low": 0.2,
+      "info": 0.0
+    },
+    "result_values": {
+      "pass": 1.0,
+      "partial": 0.5,
+      "fail": 0.0,
+      "na": null
+    },
+    "caps": [
+      {
+        "id": "cap_indexability_blockers",
+        "name": "Indexability blockers cap",
+        "if_failed_any": [
+          "SR01",
+          "SR02",
+          "IC02",
+          "RB02"
+        ],
+        "max_overall_score": 40
+      },
+      {
+        "id": "cap_homepage_noindex",
+        "name": "Homepage noindex cap",
+        "if_failed_any": [
+          "IC02"
+        ],
+        "max_overall_score": 25
+      },
+      {
+        "id": "cap_https_missing",
+        "name": "HTTPS missing cap",
+        "if_failed_any": [
+          "IC01"
+        ],
+        "max_overall_score": 70
+      }
+    ],
+    "grading": [
+      {
+        "grade": "A",
+        "min": 85,
+        "label": "Ready to scale"
+      },
+      {
+        "grade": "B",
+        "min": 70,
+        "label": "Good foundation"
+      },
+      {
+        "grade": "C",
+        "min": 50,
+        "label": "Needs work"
+      },
+      {
+        "grade": "D",
+        "min": 0,
+        "label": "Critical issues"
+      }
+    ],
+    "best_practice_handling": {
+      "note": "Best-practice checks never trigger caps; they only add small penalties via severity weights."
+    },
+    "recommendation_priority": {
+      "top_n": 10,
+      "rule": "Sort failed checks by (severity desc, affects_indexing desc, category_weight desc)"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{# templates/layout.html #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}SEOChecker{% endblock %}</title>
+
+  {# If you already have global CSS - keep it. Just ensure app.css is loaded AFTER it #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="/" class="brand-link">SEOChecker</a>
+      </div>
+      <nav class="topnav">
+        <a class="topnav-link" href="/">New audit</a>
+        <a class="topnav-link" href="/pricing">Pricing</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page {% block page_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="muted">© {{ (now().year if now is defined else "") }} SEOChecker</div>
+      <div class="muted">Actionable SEO audits</div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/report.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

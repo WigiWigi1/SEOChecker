@@ -1,0 +1,336 @@
+{# templates/report.html #}
+{% extends "layout.html" %}
+{% block title %}SEOChecker — Report{% endblock %}
+{% block page_class %}report-page{% endblock %}
+
+{% block content %}
+
+{# ---------- safe defaults ---------- #}
+{% set summary = audit.summary if audit and audit.summary else {} %}
+{% set overall_score = summary.overall_score if summary.overall_score is not none else 0 %}
+{% set grade = summary.grade if summary.grade else "—" %}
+{% set target = audit.audit_meta.target if audit and audit.audit_meta and audit.audit_meta.target else {} %}
+{% set url = target.normalized_url if target.normalized_url else (target.url if target.url else "") %}
+
+{# tooltips text #}
+{% set CAT_DESC = {
+  "indexing_crawlability": "Can Googlebot access, crawl and index your pages (HTTPS, robots/noindex, auth walls).",
+  "canonical_duplicates": "Signals that help Google pick the main (canonical) URL and avoid duplicate indexing.",
+  "status_redirects": "HTTP status codes and redirects (200/3xx/4xx/5xx), loops and chains.",
+  "sitemaps_robots": "Robots.txt + sitemap presence and hygiene to help discovery and crawling.",
+  "mobile_rendering": "Mobile friendliness basics (viewport, lang, blocked resources).",
+  "performance_cwv": "Core Web Vitals and performance metrics affecting UX and rankings.",
+  "onpage_basic": "Title, meta description, headings, and basic on-page SEO signals.",
+  "site_architecture": "Internal linking and structure that helps bots and users find content.",
+  "structured_data": "Schema/JSON-LD presence and validity to enable rich results.",
+  "internationalization": "Hreflang, language/region targeting and i18n SEO setup.",
+  "trust_transparency": "Trust pages (About, Contact, Privacy, Terms) and transparency signals."
+} %}
+
+{% set CAT_ICON = {
+  "indexing_crawlability": "🧭",
+  "canonical_duplicates": "🔗",
+  "status_redirects": "↪️",
+  "sitemaps_robots": "🗺️",
+  "mobile_rendering": "📱",
+  "performance_cwv": "⚡",
+  "onpage_basic": "📝",
+  "site_architecture": "🏗️",
+  "structured_data": "🧩",
+  "internationalization": "🌍",
+  "trust_transparency": "🛡️"
+} %}
+
+{% set STATUS_LABEL = {"pass":"Pass","fail":"Fail","partial":"Partial","na":"N/A"} %}
+{% set STATUS_BADGE = {"pass":"badge badge-pass","fail":"badge badge-fail","partial":"badge badge-warn","na":"badge badge-na"} %}
+
+{# page flags for JS #}
+<div id="report-root"
+     data-report-id="{{ report_id }}"
+     data-is-pro="{{ 1 if is_pro else 0 }}">
+</div>
+
+{# ---------- HERO ---------- #}
+<section class="report-hero">
+  <div class="report-title">
+    <h1>SEO Audit Report</h1>
+    {% if url %}
+      <div class="report-subtitle">
+        Target: <a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="report-grade grade-{{ grade }}">
+    <div class="grade-letter">{{ grade }}</div>
+    <div class="grade-score">{{ "%.2f"|format(overall_score) }}/100</div>
+  </div>
+</section>
+
+{# ---------- SUMMARY ---------- #}
+<section class="summary-cards">
+  <div class="card">
+    <div class="card-title">What this means</div>
+    <div class="card-body">
+      {% if grade in ["A"] %}
+        <p>Your site looks solid technically. Focus on growth: content, internal linking, and rich snippets.</p>
+      {% elif grade in ["B"] %}
+        <p>Good foundation. A few technical/on-page improvements could unlock better indexing and CTR.</p>
+      {% elif grade in ["C"] %}
+        <p>Some issues may limit visibility. Fix important technical items first, then refine on-page SEO.</p>
+      {% elif grade in ["D", "E", "F"] %}
+        <p>There are serious blockers for SEO. Prioritize crawlability, indexability and status/redirect issues.</p>
+      {% else %}
+        <p>Review the recommendations below and address the highest-impact issues first.</p>
+      {% endif %}
+
+      {% if audit and audit.audit_meta and audit.audit_meta.crawl %}
+        <p class="muted">
+          Crawled {{ audit.audit_meta.crawl.pages_crawled or 0 }} pages (depth {{ audit.audit_meta.crawl.crawl_depth or "—" }}).
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Quick highlights</div>
+    <div class="card-body">
+      {% set checks = audit.checks if audit and audit.checks else [] %}
+      {% set pass_count = checks|selectattr("status","equalto","pass")|list|length %}
+      {% set fail_count = checks|selectattr("status","equalto","fail")|list|length %}
+      {% set partial_count = checks|selectattr("status","equalto","partial")|list|length %}
+      {% set na_count = checks|selectattr("status","equalto","na")|list|length %}
+
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-num">{{ fail_count }}</div><div class="kpi-label">fails</div></div>
+        <div class="kpi"><div class="kpi-num">{{ partial_count }}</div><div class="kpi-label">partial</div></div>
+        <div class="kpi"><div class="kpi-num">{{ pass_count }}</div><div class="kpi-label">pass</div></div>
+        <div class="kpi"><div class="kpi-num">{{ na_count }}</div><div class="kpi-label">n/a</div></div>
+      </div>
+
+      <p class="muted" style="margin-top:12px;">
+        Tip: start with <strong>Important</strong> items, then apply <strong>Best practice</strong> improvements.
+      </p>
+    </div>
+  </div>
+</section>
+
+{# ---------- CATEGORY SCORES ---------- #}
+<section class="section">
+  <div class="section-head">
+    <h2>Category scores</h2>
+    <p class="muted">A quick map of where the biggest gains usually are.</p>
+  </div>
+
+  {% set category_scores = audit.category_scores if audit and audit.category_scores else {} %}
+
+  <div class="grid-2">
+    {% for cat in CAT_DESC.keys() %}
+      {% set score = category_scores.get(cat) %}
+      <div class="category-card">
+        <div class="cat-left">
+          <div class="cat-icon">{{ CAT_ICON.get(cat, "📌") }}</div>
+          <div class="cat-meta">
+            <div class="cat-title">
+              {{ cat.replace("_"," ").title() }}
+              <span class="tooltip" aria-label="info">i
+                <span class="tooltip-text">{{ CAT_DESC.get(cat, "SEO category information.") }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cat-right">
+          {% if score is not none %}
+            <div class="score-pill">{{ "%.2f"|format(score) }}/100</div>
+          {% else %}
+            <div class="score-pill score-pill-na">—</div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{# ---------- RECOMMENDATIONS ---------- #}
+<section class="section">
+  <div class="section-head">
+    <h2>Priority recommendations</h2>
+    <p class="muted">
+      Start with Critical/Important. Pro reports include step-by-step fix instructions.
+    </p>
+  </div>
+
+  {% set recs = audit.recommendations if audit and audit.recommendations else {} %}
+  {% set rec_levels = ["critical", "important", "best_practice"] %}
+
+  <div class="recs">
+    {% for lvl in rec_levels %}
+      {% set items = recs.get(lvl, []) %}
+      {% if items and items|length > 0 %}
+        <div class="rec-block">
+          <div class="rec-block-title">
+            <span class="rec-dot rec-{{ lvl }}"></span>
+            <h3 style="margin:0;">{{ lvl.replace("_"," ").title() }}</h3>
+          </div>
+
+          {% for r in items %}
+            <div class="rec-card">
+              <div class="rec-title">{{ r.short }}</div>
+              <div class="rec-meta muted">Check: {{ r.check_id }} · Category: {{ r.category }}</div>
+
+              <div class="rec-body">
+                <p>{{ r.details or "This issue can affect SEO performance. Review the related pages and apply the fix." }}</p>
+
+                <div class="pro-lock {% if is_pro %}is-pro{% endif %}">
+                  {% if is_pro %}
+                    <div class="pro-lock-text">Step-by-step fix available</div>
+                    <button type="button"
+                            class="btn btn-secondary pro-open-btn"
+                            data-check-id="{{ r.check_id }}">
+                      Show steps
+                    </button>
+                    <div class="pro-content" data-check-id="{{ r.check_id }}" style="display:none;"></div>
+                  {% else %}
+                    <div class="pro-lock-text">🔒 Pro: step-by-step fix instructions + examples.</div>
+                    <button type="button" class="btn btn-secondary upgrade-btn">Unlock Pro fixes</button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    {% if (recs.get("critical", [])|length + recs.get("important", [])|length + recs.get("best_practice", [])|length) == 0 %}
+      <div class="card">
+        <div class="card-title">No recommendations found</div>
+        <div class="card-body muted">This report did not return any prioritized items.</div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ---------- ALL CHECKS (GROUPED) ---------- #}
+<section class="section">
+  <div class="section-head">
+    <h2>All checks</h2>
+    <p class="muted">Grouped by category. Expand sections to see individual checks.</p>
+  </div>
+
+  <div class="checks-toolbar">
+    <label class="chip">
+      <input type="checkbox" id="toggle-na" checked>
+      Hide N/A
+    </label>
+    <label class="chip">
+      <input type="checkbox" id="toggle-pass">
+      Hide Pass
+    </label>
+  </div>
+
+  {% set checks = audit.checks if audit and audit.checks else [] %}
+
+  <div class="checks">
+    {% for cat in CAT_DESC.keys() %}
+      {% set cat_checks = checks|selectattr("category","equalto",cat)|list %}
+      {% if cat_checks|length > 0 %}
+      <details class="check-group" open>
+        <summary class="check-group-summary">
+          <div class="cgs-left">
+            <span class="cgs-icon">{{ CAT_ICON.get(cat, "📌") }}</span>
+            <span class="cgs-title">{{ cat.replace("_"," ").title() }}</span>
+            <span class="tooltip" aria-label="info">i
+              <span class="tooltip-text">{{ CAT_DESC.get(cat, "SEO category information.") }}</span>
+            </span>
+          </div>
+          <div class="cgs-right muted">{{ cat_checks|length }} checks</div>
+        </summary>
+
+        <div class="check-list">
+          {% for c in cat_checks %}
+            {% set st = c.status or "na" %}
+            <div class="check-row status-{{ st }}">
+              <div class="check-status">
+                <span class="{{ STATUS_BADGE.get(st, 'badge') }}">{{ STATUS_LABEL.get(st, st) }}</span>
+              </div>
+
+              <div class="check-content">
+                <div class="check-title">
+                  {{ c.explanation.short if c.explanation and c.explanation.short else (c.check_id ~ " — " ~ (c.category or "")) }}
+                </div>
+
+                <div class="check-meta muted">
+                  <span>Check ID: {{ c.check_id }}</span>
+                  <span class="dot">•</span>
+                  <span>Severity: {{ c.severity }}</span>
+                  {% if c.affects_indexing %}
+                    <span class="dot">•</span>
+                    <span class="pill">Affects indexing</span>
+                  {% endif %}
+                  {% if c.is_best_practice %}
+                    <span class="dot">•</span>
+                    <span class="pill">Best practice</span>
+                  {% endif %}
+                </div>
+
+                {% if c.explanation and c.explanation.details %}
+                  <div class="check-details">{{ c.explanation.details }}</div>
+                {% endif %}
+
+                {% if c.page_sample and c.page_sample|length > 0 %}
+                  <div class="check-pages">
+                    <div class="muted" style="margin-bottom:6px;">Sample pages:</div>
+                    <ul>
+                      {% for p in c.page_sample[:5] %}
+                        <li><a href="{{ p }}" target="_blank" rel="noopener">{{ p }}</a></li>
+                      {% endfor %}
+                      {% if c.page_sample|length > 5 %}
+                        <li class="muted">…and {{ c.page_sample|length - 5 }} more</li>
+                      {% endif %}
+                    </ul>
+                  </div>
+                {% endif %}
+
+                {# IMPORTANT: only for fail/partial #}
+                {% if st in ["fail", "partial"] %}
+                  <div class="fix-block">
+                    <div class="fix-head">How to fix</div>
+
+                    {% if c.fix_hint and c.fix_hint.action %}
+                      <div class="fix-tease">{{ c.fix_hint.action }}</div>
+                    {% else %}
+                      <div class="fix-tease muted">
+                        Free report shows a short hint. Pro report includes step-by-step fixes tailored to your pages.
+                      </div>
+                    {% endif %}
+
+                    <div class="pro-lock compact {% if is_pro %}is-pro{% endif %}">
+                      {% if is_pro %}
+                        <div class="pro-lock-text">Step-by-step fix available</div>
+                        <button type="button"
+                                class="btn btn-secondary pro-open-btn"
+                                data-check-id="{{ c.check_id }}">
+                          Show steps
+                        </button>
+                        <div class="pro-content" data-check-id="{{ c.check_id }}" style="display:none;"></div>
+                      {% else %}
+                        <div class="pro-lock-text">🔒 Full steps + examples in Pro</div>
+                        <button type="button" class="btn btn-secondary upgrade-btn">Unlock</button>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endif %}
+
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}
